@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+
+  <div style="width: 70%; margin: auto;">
+    <canvas id="lienzo"></canvas>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    
+    //contexto = lienzo donde pintaremos / renderizaremos
+    const contexto = document.querySelector("#lienzo")
+
+    //Chart(referencia_canvas, configuracion_grafico)
+    const grafico = new Chart(contexto, {
+      type: 'bar',
+      data: {
+        labels: ["PHP", "Javascript", "C#", "Python"],
+        datasets: [{
+          label: "2022",
+          data: [45, 55, 35, 60],
+          backgroundColor: [
+            'rgba(255, 127, 80, .5)',
+            'rgba(130, 55, 10, .5)',
+            'rgba(144, 238, 10, .5)',
+            'rgba(251, 55, 10, .5)'
+          ],
+          borderColor: [
+            'rgba(255, 127, 80, 5)',
+            'rgba(130, 55, 10, 5)',
+            'rgba(144, 238, 10, 5)',
+            'rgba(251, 55, 10, 5)'
+          ],
+          borderWidth: 2
+        }]
+      }
+    })
+
+  </script>
+</body>
+</html>

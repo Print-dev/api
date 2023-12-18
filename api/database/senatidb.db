@@ -1,0 +1,208 @@
+CREATE DATABASE SENATIDB;
+USE SENATIDB;
+
+
+CREATE TABLE marcas
+(
+	idmarca		INT auto_increment PRIMARY KEY,
+    marca		VARCHAR(30)			NOT NULL,
+    create_at	DATETIME			NOT NULL DEFAULT NOW(),
+    inactive_at	DATETIME			NULL,
+    update_at	DATETIME			NULL,
+    CONSTRAINT uk_marca_mar	UNIQUE (marca)
+)
+ENGINE = INNODB;
+
+
+INSERT INTO marcas (marca)
+	VALUES
+		('Toyota'),
+        ('Nissan'),
+        ('Volvo'),
+        ('Hyundai'),
+        ('KIA');
+
+
+CREATE TABLE vehiculos
+(
+	idvehiculo		INT auto_increment PRIMARY KEY,
+    idmarca			int				NOT NULL,
+    modelo 			VARCHAR(50)		NOT NULL,
+    color			VARCHAR(30)		NOT NULL,
+    tipocombustible	CHAR(3)			NOT NULL,
+    peso			SMALLINT		NOT NULL,
+    afabricacion	CHAR(4)			NOT NULL,
+    placa			CHAR(7)			NOT NULL,
+    create_at	DATETIME			NOT NULL DEFAULT NOW(),
+    inactive_at	DATETIME			NULL,
+    update_at	DATETIME			NULL,
+    CONSTRAINT fk_idmarca_veh	foreign key (idmarca) REFERENCES marcas (idmarca),
+    CONSTRAINT ck_tipocombustible_veh	CHECK ( tipocombustible IN ('GSL','DSL', 'GNV', 'GLP')),
+    CONSTRAINT ck_peso_veh CHECK (peso > 0)
+)
+ENGINE = INNODB;
+
+
+INSERT INTO vehiculos 
+	(idmarca, modelo, color, tipocombustible, peso, afabricacion, placa)
+	VALUES
+		(1, 'Hilux', 'blanco', 'DSL', 1800, '2020', 'ABC-111'),
+        (1, 'Sentra', 'gris', 'GSL', 1200, '2021', 'ABC-112'), 
+        (1, 'EX30', 'negro', 'GNV', 1350, '2023', 'ABC-113'),
+        (1, 'Tucson', 'rojo', 'GLP', 1800, '2023', 'ABC-114'),
+        (1, 'Sportage', 'azul', 'DSL', 1500, '2010', 'ABC-115');
+
+DELIMITER $$
+
+
+CREATE PROCEDURE spu_vehiculos_buscar(IN _placa CHAR(7))
+BEGIN
+	SELECT 
+		VEH.idvehiculo,
+        MAR.marca,
+        VEH.modelo,
+        VEH.color,
+        VEH.tipocombustible,
+        VEH.peso,
+        VEH.afabricacion,
+        VEH.placa
+		FROM vehiculos VEH
+		INNER JOIN marcas MAR on MAR.idmarca = VEH.idmarca
+        WHERE (VEH.inactive_at IS NULL) AND (VEH.placa = _placa);
+
+END $$
+
+
+DELIMITER $$
+CREATE PROCEDURE spu_vehiculos_registrar(
+						
+                        IN _idmarca INT,
+                        IN _modelo	VARCHAR(50),
+                        IN _color 	VARCHAR(30),
+                        IN _tipocombustible CHAR(3),
+                        IN _peso	SMALLINT,
+                        IN _afabricacion CHAR(4),
+                        IN _placa	CHAR(7)
+                        
+                        )
+BEGIN
+	INSERT INTO vehiculos(idmarca, modelo, color, tipocombustible, peso, afabricacion, placa)
+    VALUES (_idmarca, _modelo, _color, _tipocombustible, _peso, _afabricacion, _placa);
+    
+    SELECT @@last_insert_id 'idvehiculo';
+END $$
+
+
+DELIMITER $$
+CREATE PROCEDURE spu_marcas_listar()
+BEGIN
+	SELECT 
+		idmarca,
+        marca
+		FROM marcas
+        WHERE inactive_at	IS NULL
+        ORDER BY marca;
+END $$
+
+
+CREATE TABLE sedes
+(
+	idsede			INT	auto_increment PRIMARY KEY,
+    sede			VARCHAR(80) NOT NULL,
+    create_at 		DATETIME	NOT NULL DEFAULT NOW(),
+    update_at		DATETIME 	NULL,
+    CONSTRAINT uk_sede	unique (sede)
+)
+ENGINE = INNODB;
+
+
+CREATE TABLE empleados
+(
+	idempleado		INT auto_increment PRIMARY KEY,
+    idsede			INT 		NOT NULL,
+    apellidos		VARCHAR(70) NOT NULL,
+    nombres			VARCHAR(70) NOT NULL,
+    nrodocumento	CHAR(8) 	NOT NULL,
+    fechanac		DATE 		NOT NULL,
+    telefono 		CHAR(9) 	NOT NULL,
+    create_at 		DATETIME	NOT NULL DEFAULT NOW(),
+    update_at		DATETIME 	NULL,
+	CONSTRAINT uk_nrodocumento	UNIQUE (nrodocumento),
+    CONSTRAINT fk_idsede	FOREIGN KEY (idsede) REFERENCES sedes (idsede),
+    CONSTRAINT uk_telefono	UNIQUE(telefono)
+)
+ENGINE = INNODB;
+
+
+DELIMITER $$
+CREATE PROCEDURE spu_listar_empleados()
+BEGIN 
+	SELECT 
+		e.idempleado,
+        s.sede,
+        e.apellidos,
+        e.nombres,
+        e.nrodocumento,
+        e.fechanac,
+        e.telefono
+		FROM
+        empleados e
+        INNER JOIN sedes s ON s.idsede = e.idsede
+        ORDER BY e.idempleado DESC;
+END $$
+
+
+DELIMITER $$
+CREATE PROCEDURE spu_registrar_empleados(
+					IN _idsede 	INT,
+                    IN _apellidos VARCHAR(70),
+                    IN _nombres	  VARCHAR(70),
+                    IN _nrodocumento CHAR(8),
+                    IN _fechanac	DATE,
+                    IN _telefono	CHAR(9)
+					)
+BEGIN
+	INSERT INTO empleados(idsede, apellidos, nombres, nrodocumento, fechanac, telefono)
+    VALUES (_idsede, _apellidos, _nombres, _nrodocumento, _fechanac, _telefono);
+    
+    SELECT @@last_insert_id 'idempleado';
+END $$
+
+
+
+DELIMITER $$
+CREATE PROCEDURE spu_buscar_empleado(IN _nrodocumento CHAR(8))
+BEGIN
+	SELECT 
+        s.sede,
+        e.apellidos,
+        e.nombres,
+        e.nrodocumento,
+        e.fechanac,
+        e.telefono
+		FROM
+        empleados e
+        INNER JOIN sedes s ON s.idsede = e.idsede
+        WHERE e.nrodocumento = _nrodocumento;
+END $$
+
+
+DELIMITER $$
+CREATE PROCEDURE spu_listar_sedes()
+BEGIN
+	SELECT
+		*	
+		FROM
+        sedes;
+END $$
+
+
+-- INSERT sedes
+INSERT INTO sedes (sede) values ('ayacucho'),('lima'),('san juan de lurigancho');
+
+-- SPU INSERTAR empleados
+CALL spu_registrar_empleados (1, "avalos romero", "royer alexis", "33333333", "03-05-2005", "888888888");
+
+-- SPU INSERTAR vehiculos
+CALL spu_vehiculos_registrar(4, 'Santa Fe', 'Gris oscuro', 'GLP', 1900, '2020', 'ABC-777');
+CALL spu_vehiculos_registrar(4, 'Creta', 'Azul Electrico', 'GNV', 1200, '2021', 'ABC-001');
